@@ -10,19 +10,47 @@
 
             <div :class="'cookie__' + type + '__content'">
                 <slot name="message">
-                    We use cookies to ensure you get the best experience on our website. <a href="https://cookiesandyou.com/" target="_blank">Learn More...</a>
+                    We use cookies to ensure you get the best experience on our website. <a href="https://cookiesandyou.com/" target="_blank">Learn More...</a><br>
+                    <a href="#" @click="showOptions" v-if="!optionsVisible">Show Options</a>
                 </slot>
             </div>
 
-            <div :class="'cookie__' + type + '__buttons'">
-                <button v-if="disableDecline === false" @click="decline" :class="['cookie__' + type + '__buttons__button', 'cookie__' + type + '__buttons__button--decline']">
-                    <slot name="declineContent">
-                        Opt Out
+            <div :class="'cookie__' + type + '__options'" v-if="optionsVisible">
+                <div :class="'cookie__' + type + '__options--column'">
+                    <slot name="leftOptionsColumn">
+                        <label for="functional">
+                            <input type="checkbox" name="options[functional]" id="functional" v-model="options.functional" disabled>
+                            <span>Functional</span>
+                        </label>
+                        <label for="analytical">
+                            <input type="checkbox" name="options[analytical]" id="analytical" v-model="options.analytical">
+                            <span>Analytical</span>
+                        </label>
                     </slot>
-                </button>
+                </div>
+                <div :class="'cookie__' + type + '__options--column'">
+                    <slot name="rightOptionsColumn">
+                        <label for="marketing">
+                            <input type="checkbox" name="options[marketing]" id="marketing" v-model="options.marketing">
+                            <span>Marketing</span>
+                        </label>
+                        <label for="preferences">
+                            <input type="checkbox" name="options[preferences]" id="preferences" v-model="options.preferences">
+                            <span>Preferences</span>
+                        </label>
+                    </slot>
+                </div>
+            </div>
+
+            <div :class="'cookie__' + type + '__buttons'">
                 <button @click="accept" :class="['cookie__' + type + '__buttons__button', 'cookie__' + type + '__buttons__button--accept']">
                     <slot name="acceptContent">
-                        Got It!
+                        I agree
+                    </slot>
+                </button>
+                <button v-if="disableDecline === false" @click="decline" :class="['cookie__' + type + '__buttons__button', 'cookie__' + type + '__buttons__button--decline']">
+                    <slot name="declineContent">
+                        Opt out
                     </slot>
                 </button>
             </div>
@@ -52,11 +80,11 @@ export default {
             default: false
         },
 
-        // floating: bottom-left, bottom-right, top-left, top-rigt
+        // floating: bottom-left, bottom-right, top-left, top-right
         // bar:  bottom, top
         position: {
             type: String,
-            default: 'bottom-left'
+            default: 'bottom-right'
         },
 
         // floating, bar
@@ -80,7 +108,14 @@ export default {
         return {
             status: null,
             supportsLocalStorage: true,
-            isOpen: false
+            isOpen: false,
+            optionsVisible: false,
+            options: {
+                functional: true,
+                analytical: true,
+                marketing: true,
+                preferences: true
+            }
         }
     },
     computed: {
@@ -143,6 +178,19 @@ export default {
                 }
             }
         },
+        setOptionsPreferences () {
+            if (this.supportsLocalStorage) {
+                localStorage.setItem(`vue-cookie-accept-decline-${this.elementId}-options-functional`, this.options.functional)
+                localStorage.setItem(`vue-cookie-accept-decline-${this.elementId}-options-analytical`, this.options.analytical)
+                localStorage.setItem(`vue-cookie-accept-decline-${this.elementId}-options-marketing`, this.options.marketing)
+                localStorage.setItem(`vue-cookie-accept-decline-${this.elementId}-options-preferences`, this.options.preferences)
+            } else {
+                tinyCookie.set(`vue-cookie-accept-decline-${this.elementId}-options-functional`, this.options.functional)
+                tinyCookie.set(`vue-cookie-accept-decline-${this.elementId}-options-analytical`, this.options.analytical)
+                tinyCookie.set(`vue-cookie-accept-decline-${this.elementId}-options-marketing`, this.options.marketing)
+                tinyCookie.set(`vue-cookie-accept-decline-${this.elementId}-options-preferences`, this.options.preferences)
+            }
+        },
         getCookieStatus () {
             if (this.supportsLocalStorage) {
                 return localStorage.getItem(`vue-cookie-accept-decline-${this.elementId}`)
@@ -153,6 +201,7 @@ export default {
         accept () {
             if (!this.debug) {
                 this.setCookieStatus('accept')
+                this.setOptionsPreferences()
             }
 
             this.status = 'accept'
@@ -178,9 +227,25 @@ export default {
             this.$emit('clicked-postpone')
         },
         removeCookie () {
-            localStorage.removeItem(`vue-cookie-accept-decline-${this.elementId}`)
+            if (this.supportsLocalStorage) {
+                localStorage.removeItem(`vue-cookie-accept-decline-${this.elementId}`)
+                localStorage.removeItem(`vue-cookie-accept-decline-${this.elementId}-options-functional`)
+                localStorage.removeItem(`vue-cookie-accept-decline-${this.elementId}-options-analytical`)
+                localStorage.removeItem(`vue-cookie-accept-decline-${this.elementId}-options-marketing`)
+                localStorage.removeItem(`vue-cookie-accept-decline-${this.elementId}-options-preferences`)
+            } else {
+                tinyCookie.remove(`vue-cookie-accept-decline-${this.elementId}`)
+                tinyCookie.remove(`vue-cookie-accept-decline-${this.elementId}-options-functional`)
+                tinyCookie.remove(`vue-cookie-accept-decline-${this.elementId}-options-analytical`)
+                tinyCookie.remove(`vue-cookie-accept-decline-${this.elementId}-options-marketing`)
+                tinyCookie.remove(`vue-cookie-accept-decline-${this.elementId}-options-preferences`)
+            }
             this.status = null
             this.$emit('removed-cookie')
+        },
+        showOptions () {
+            this.optionsVisible = true
+            this.$emit('clicked-show-options')
         }
     },
 }
@@ -408,13 +473,17 @@ export default {
 
             &__content {
                 font-size: 0.95rem;
-                margin-bottom: 5px;
                 padding: 15px 20px;
-                max-height: 105px;
                 overflow: auto;
+            }
 
-                @media (min-width: 768px) {
-                    margin-bottom: 10px;
+            &__options {
+                padding: 0px 20px 15px 20px;
+                font-size: 0.6rem;
+
+                &--column {
+                    float: left;
+                    width: 30%;
                 }
             }
 

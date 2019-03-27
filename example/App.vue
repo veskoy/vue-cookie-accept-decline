@@ -69,7 +69,7 @@
             :ref="'myPanel1'"
             :elementId="'myPanel1'"
             :debug="false"
-            :position="'bottom-left'"
+            :position="'bottom-right'"
             :type="'floating'"
             :disableDecline="false"
             :transitionName="'slideFromBottom'"
@@ -85,19 +85,19 @@
                 &times;
             </div>
 
-            <!-- Optional -->
+            <!-- Optional
             <div slot="message">
-                We use cookies to ensure you get the best experience on our website. <a href="https://cookiesandyou.com/" target="_blank">Learn More...</a>
+                We use cookies to ensure you get the best experience on our website. <a href="https://cookiesandyou.com/" target="_blank">Learn More</a>
+            </div> -->
+
+            <!-- Optional -->
+            <div slot="acceptContent">
+                I agree
             </div>
 
             <!-- Optional -->
             <div slot="declineContent">
-                OPT OUT
-            </div>
-
-            <!-- Optional -->
-            <div slot="acceptContent">
-                GOT IT!
+                Opt out
             </div>
         </vue-cookie-accept-decline>
 
